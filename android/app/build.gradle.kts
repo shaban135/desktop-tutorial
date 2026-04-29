@@ -17,7 +17,7 @@ dependencies {
 }
 
 android {
-    namespace = "com.mepco.esafetyapp"
+    namespace = "com.example.mepco_esafety_app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -32,7 +32,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.mepco.esafetyapp"
+        applicationId = "com.example.mepco_esafety_app"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
