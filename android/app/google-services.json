@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:97210344550:android:f600ca0b706323d81db9a7",
+        "mobilesdk_app_id": "1:97210344550:android:7d831afa54c1998d1db9a7",
         "android_client_info": {
-          "package_name": "com.example.mepco_esafety_app"
+          "package_name": "com.mepco.esafetyapp"
         }
       },
       "oauth_client": [],
