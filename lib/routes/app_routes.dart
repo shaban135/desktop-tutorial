@@ -1,0 +1,35 @@
+abstract class AppRoutes {
+  static const initial = '/';
+  static const login = '/login';
+  static const signup = '/signup';
+  static const forgotPassword = '/forgot-password';
+  static const verifyIdentity = '/verify-identity';
+  static const createNewPassword = '/create-new-password';
+  static const passwordResetSuccess = '/password-reset-success';
+  static const home = '/home';
+  static const completionConfirmation = '/completion-confirmation';
+  static const profile = '/profile';
+  static const editProfile = '/edit-profile';
+  static const newPtw = '/new-ptw';
+  static const workTeamInformation = '/work-team-information';
+  static const technicalWorkDetails = '/technical-work-details';
+  static const safetyChecklistLineLoad = '/safety-checklist-line-load';
+  static const hazardIdentification = '/hazard-identification';
+  static const attachmentsSubmission = '/attachments-submission';
+  static const ptwReviewSdo = '/ptw-review-sdo';
+  static const ptwIssueGridIncharge = '/ptw-issue-grid-incharge';
+  static const ptwIssuerInstructions = '/ptw-issuer-instructions';
+  static const ptwFinalClosure = '/ptw-final-closure';
+  static const pdcQueue = '/pdc-queue'; // Restoring the route
+static const listBulletedIcon = '/list-bulleted-icon';
+static const createPtwScreen = '/create-ptw-screen';
+static const ptwDraft = '/ptw-draft';
+static const ptwList = '/ptw-list';
+static const gridPtwIssueChecklist = '/grid-ptw-issue-checklist';
+static const ptwCompleted = '/ptw-completed';
+static const ptwGridClose = '/ptw-grid-close';
+static const ptwCancelByLs = '/ptw-cancel-by-ls';
+static const notifications = '/notifications';
+  static const hseFieldCheck = '/hse-field-check';
+// static const hseFieldCheck = '/hse-field-check';
+}

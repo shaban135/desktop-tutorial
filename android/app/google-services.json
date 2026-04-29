@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "97210344550",
+    "project_id": "mepco-esafety",
+    "storage_bucket": "mepco-esafety.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:97210344550:android:f600ca0b706323d81db9a7",
+        "android_client_info": {
+          "package_name": "com.example.mepco_esafety_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBhZt5nFO6OLDQUbbljd9reZyZY8YT_TI4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
