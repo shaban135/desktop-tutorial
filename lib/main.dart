@@ -55,12 +55,45 @@ void handleNotificationClick(Map<String, dynamic> data) {
   }
 }
 
+// Future<void> initializeLocalNotifications() async {
+//   const AndroidInitializationSettings androidSettings =
+//   AndroidInitializationSettings('@mipmap/ic_launcher');
+
+//   const InitializationSettings settings =
+//   InitializationSettings(android: androidSettings);
+
+//   await flutterLocalNotificationsPlugin.initialize(
+//     settings,
+//     onDidReceiveNotificationResponse: (NotificationResponse response) {
+//       final payload = response.payload;
+//       if (payload != null) {
+//         handleNotificationClick(jsonDecode(payload));
+//       }
+//     },
+//   );
+
+//   final androidPlugin = flutterLocalNotificationsPlugin
+//       .resolvePlatformSpecificImplementation<
+//       AndroidFlutterLocalNotificationsPlugin>();
+
+//   await androidPlugin?.createNotificationChannel(notificationChannel);
+// }
 Future<void> initializeLocalNotifications() async {
   const AndroidInitializationSettings androidSettings =
-  AndroidInitializationSettings('@mipmap/ic_launcher');
+      AndroidInitializationSettings('@mipmap/ic_launcher');
 
-  const InitializationSettings settings =
-  InitializationSettings(android: androidSettings);
+  // ← YE ADD KARO
+  const DarwinInitializationSettings iosSettings =
+      DarwinInitializationSettings(
+    requestAlertPermission: true,
+    requestBadgePermission: true,
+    requestSoundPermission: true,
+  );
+
+  const InitializationSettings settings = InitializationSettings(
+    android: androidSettings,
+    iOS: iosSettings, // ← YE ADD KARO
+  );
 
   await flutterLocalNotificationsPlugin.initialize(
     settings,
@@ -72,9 +105,10 @@ Future<void> initializeLocalNotifications() async {
     },
   );
 
+  // Ye sirf Android ke liye hai — iOS py null safe rakho
   final androidPlugin = flutterLocalNotificationsPlugin
-      .resolvePlatformSpecificImplementation<
-      AndroidFlutterLocalNotificationsPlugin>();
+      .resolvePlatformSpecificImplementation
+          AndroidFlutterLocalNotificationsPlugin>();
 
   await androidPlugin?.createNotificationChannel(notificationChannel);
 }
