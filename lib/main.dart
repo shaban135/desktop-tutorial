@@ -92,7 +92,7 @@ Future<void> initializeLocalNotifications() async {
 
   const InitializationSettings settings = InitializationSettings(
     android: androidSettings,
-    iOS: iosSettings, // ← YE ADD KARO
+    iOS: iosSettings,
   );
 
   await flutterLocalNotificationsPlugin.initialize(
@@ -105,12 +105,10 @@ Future<void> initializeLocalNotifications() async {
     },
   );
 
-  // Ye sirf Android ke liye hai — iOS py null safe rakho
-  final androidPlugin = flutterLocalNotificationsPlugin
-      .resolvePlatformSpecificImplementation
-          AndroidFlutterLocalNotificationsPlugin>();
+  final AndroidFlutterLocalNotificationsPlugin? androidPlugin =
+    flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
 
-  await androidPlugin?.createNotificationChannel(notificationChannel);
+await androidPlugin?.createNotificationChannel(notificationChannel);
 }
 
 Future<void> showLocalNotification(RemoteMessage message) async {
