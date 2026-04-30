@@ -173,13 +173,14 @@ Future<void> main() async {
   // Global Platform Error Catcher (Async errors)
   PlatformDispatcher.instance.onError = (error, stack) {
     final errorStr = error.toString();
-    if (errorStr.contains('NetworkImageLoadException') || 
-        errorStr.contains('statusCode: 404') ||
-        errorStr.contains('ClientException') ||
-        errorStr.contains('tile.openstreetmap.org')) {
-      debugPrint('Ignored async image/tile load error: $errorStr');
-      return true;
-    }
+  if (errorStr.contains('NetworkImageLoadException') ||
+      errorStr.contains('statusCode: 404') ||
+      errorStr.contains('ClientException') ||
+      errorStr.contains('tile.openstreetmap.org') ||
+      errorStr.contains('apns-token-not-set')) { // ← YE ADD KARO
+    debugPrint('Ignored error: $errorStr');
+    return true;
+  }
 
     SnackbarHelper.showError(
       title: 'Unexpected Error',
@@ -206,7 +207,12 @@ Future<void> main() async {
 
   FirebaseMessaging messaging = FirebaseMessaging.instance;
   await messaging.requestPermission(alert: true, badge: true, sound: true);
-
+try {
+  String? token = await messaging.getToken();
+  debugPrint('FCM Token: $token');
+} catch (e) {
+  debugPrint('FCM Token error (ignored on iOS Ad Hoc): $e');
+}
   FirebaseMessaging.onBackgroundMessage(
     firebaseMessagingBackgroundHandler,
   );
