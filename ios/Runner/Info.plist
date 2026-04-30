@@ -83,6 +83,7 @@
     <!-- Google Maps -->
     <key>io.flutter.embedded_views_preview</key>
     <true/>
-
+<key>GMSApiKey</key>
+<string>AIzaSyBWrEQ_rE_0zNAG7W_7kmKgt_B4y9OKM38</string>
 </dict>
 </plist>

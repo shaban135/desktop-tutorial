@@ -408,7 +408,7 @@ class CreatePtwController extends GetxController {
         );
 
         // Go back to prevent broken state
-        Get.back();
+        //Get.back();
       }
     } catch (e) {
       SnackbarHelper.showError(
@@ -567,55 +567,97 @@ class CreatePtwController extends GetxController {
   }
 
   // ---------------------- Location ----------------------
+  // Future<void> determinePosition() async {
+  //   isFetchingLocation.value = true;
+  //
+  //   bool enabled = await Geolocator.isLocationServiceEnabled();
+  //   if (!enabled) {
+  //     isFetchingLocation.value = false;
+  //     SnackbarHelper.showError(
+  //         title: 'Location Error',
+  //         message: 'Location services are disabled.');
+  //     return;
+  //   }
+  //
+  //   LocationPermission permission = await Geolocator.checkPermission();
+  //   if (permission == LocationPermission.denied) {
+  //     permission = await Geolocator.requestPermission();
+  //     if (permission == LocationPermission.denied) {
+  //       isFetchingLocation.value = false;
+  //       SnackbarHelper.showError(
+  //           title: "Location Error",
+  //           message: "Location permissions denied.");
+  //       return;
+  //     }
+  //   }
+  //
+  //   if (permission == LocationPermission.deniedForever) {
+  //     isFetchingLocation.value = false;
+  //     SnackbarHelper.showError(
+  //         title: "Location Error",
+  //         message: "Location permanently denied.");
+  //     return;
+  //   }
+  //
+  //   try {
+  //     Position pos = await Geolocator.getCurrentPosition();
+  //     currentLocation.value = LatLng(pos.latitude, pos.longitude);
+  //
+  //     List<Placemark> placemarks = await placemarkFromCoordinates(pos.latitude, pos.longitude);
+  //     if (placemarks.isNotEmpty) {
+  //       Placemark place = placemarks[0];
+  //       currentAddress.value = "${place.street}, ${place.subLocality}, ${place.locality}";
+  //     }
+  //   } catch (e) {
+  //     SnackbarHelper.showError(
+  //         title: "Location Error", message: "Failed to get location: $e");
+  //   } finally {
+  //     isFetchingLocation.value = false;
+  //   }
+  // }
   Future<void> determinePosition() async {
     isFetchingLocation.value = true;
 
-    bool enabled = await Geolocator.isLocationServiceEnabled();
-    if (!enabled) {
-      isFetchingLocation.value = false;
-      SnackbarHelper.showError(
-          title: 'Location Error',
-          message: 'Location services are disabled.');
-      return;
-    }
-
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        isFetchingLocation.value = false;
-        SnackbarHelper.showError(
-            title: "Location Error",
-            message: "Location permissions denied.");
-        return;
-      }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      isFetchingLocation.value = false;
-      SnackbarHelper.showError(
-          title: "Location Error",
-          message: "Location permanently denied.");
-      return;
-    }
-
     try {
-      Position pos = await Geolocator.getCurrentPosition();
+      bool enabled = await Geolocator.isLocationServiceEnabled();
+      if (!enabled) {
+        isFetchingLocation.value = false;
+        return; // ← Snackbar hata do, sirf return karo
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          isFetchingLocation.value = false;
+          return; // ← Snackbar hata do
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        isFetchingLocation.value = false;
+        return; // ← Snackbar hata do
+      }
+
+      Position pos = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.medium, // ← high ki jagay medium
+      );
       currentLocation.value = LatLng(pos.latitude, pos.longitude);
 
-      List<Placemark> placemarks = await placemarkFromCoordinates(pos.latitude, pos.longitude);
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+          pos.latitude, pos.longitude
+      );
       if (placemarks.isNotEmpty) {
         Placemark place = placemarks[0];
-        currentAddress.value = "${place.street}, ${place.subLocality}, ${place.locality}";
+        currentAddress.value =
+        "${place.street}, ${place.subLocality}, ${place.locality}";
       }
     } catch (e) {
-      SnackbarHelper.showError(
-          title: "Location Error", message: "Failed to get location: $e");
+      debugPrint('Location error (ignored): $e');
     } finally {
       isFetchingLocation.value = false;
     }
   }
-
   // ---------------------- Date/Time Pickers ----------------------
   void selectDate(BuildContext context) async {
     DateTime initialDate;
