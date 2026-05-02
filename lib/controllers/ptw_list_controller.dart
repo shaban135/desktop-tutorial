@@ -23,7 +23,7 @@ class PtwListController extends GetxController {
   var searchQuery = ''.obs;
 
   late TextEditingController searchController;
-  var sortBy = 'updated_at'.obs;
+  var sortBy = 'created_at'.obs;
   var sortDir = 'desc'.obs;
 
   var page = 1.obs;
@@ -133,6 +133,8 @@ class PtwListController extends GetxController {
         if (fromDate.value.isNotEmpty) 'from_date': fromDate.value,
         if (toDate.value.isNotEmpty) 'to_date': toDate.value,
         if (searchQuery.value.isNotEmpty) 'search': searchQuery.value,
+        'sort_by': sortBy.value,
+        'sort_dir': sortDir.value,
         'page': page.value.toString(),
         'per_page': perPage.value.toString(),
       });
@@ -149,6 +151,9 @@ class PtwListController extends GetxController {
         'Authorization': 'Bearer $token',
         'Accept': 'application/json',
       });
+
+      log('PTW List Request URI: $uri');
+      log('PTW List Response Body: ${response.body}');
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
