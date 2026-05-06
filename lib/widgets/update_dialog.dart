@@ -11,28 +11,46 @@ import '../services/version_check_service.dart';
 class UpdateDialog extends StatefulWidget {
   final VersionCheckResponse versionCheck;
 
-  const UpdateDialog({
-    Key? key,
-    required this.versionCheck,
-  }) : super(key: key);
+  const UpdateDialog({Key? key, required this.versionCheck}) : super(key: key);
 
   @override
   State<UpdateDialog> createState() => _UpdateDialogState();
 }
 
-class _UpdateDialogState extends State<UpdateDialog> {
+class _UpdateDialogState extends State<UpdateDialog>
+    with WidgetsBindingObserver {
   bool _isDownloading = false;
   double _downloadProgress = 0.0;
   String _downloadStatus = '';
   String? _downloadFilePath;
   bool _downloadComplete = false;
   bool _hasPermission = false;
+  String? _errorMessage;
+  int _totalSize = 0;
+  http.Client? _httpClient;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _totalSize = _parseSizeFromAPI(widget.versionCheck.buildInfo?.fileSize);
     _checkExistingDownload();
     _checkAndRequestPermission();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _httpClient?.close();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Re-check file state when returning to app
+      _checkExistingDownload();
+    }
   }
 
   Future<void> _checkAndRequestPermission() async {
@@ -69,13 +87,16 @@ class _UpdateDialogState extends State<UpdateDialog> {
 
       if (await file.exists()) {
         final fileSize = await file.length();
-        final totalSize = _parseSizeFromAPI(widget.versionCheck.buildInfo?.fileSize);
+        final totalSize = _parseSizeFromAPI(
+          widget.versionCheck.buildInfo?.fileSize,
+        );
 
         if (totalSize > 0 && fileSize < totalSize) {
           setState(() {
             _downloadFilePath = filePath;
             _downloadProgress = fileSize / totalSize;
-            _downloadStatus = '${_formatBytes(fileSize)} / ${widget.versionCheck.buildInfo?.fileSize ?? ''}';
+            _downloadStatus =
+                '${_formatBytes(fileSize)} / ${widget.versionCheck.buildInfo?.fileSize ?? ''}';
           });
         } else if (totalSize > 0 && fileSize >= totalSize) {
           setState(() {
@@ -125,11 +146,12 @@ class _UpdateDialogState extends State<UpdateDialog> {
   Widget build(BuildContext context) {
     // Prevent closing dialog during download or when installation is ready
     return WillPopScope(
-      onWillPop: () async => !widget.versionCheck.forceUpdate && !_isDownloading && !_downloadComplete,
+      onWillPop: () async =>
+          !widget.versionCheck.forceUpdate &&
+          !_isDownloading &&
+          !_downloadComplete,
       child: Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         // If downloading or complete, don't allow clicking outside to close
         child: GestureDetector(
           onTap: () {}, // Intercept taps inside dialog
@@ -140,10 +162,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  Colors.blue.shade50,
-                  Colors.white,
-                ],
+                colors: [Colors.blue.shade50, Colors.white],
               ),
             ),
             child: Column(
@@ -239,7 +258,10 @@ class _UpdateDialogState extends State<UpdateDialog> {
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       onPressed: _autoInstall,
-                      icon: const Icon(Icons.install_mobile_rounded, color: Colors.white),
+                      icon: const Icon(
+                        Icons.install_mobile_rounded,
+                        color: Colors.white,
+                      ),
                       label: const Text(
                         'INSTALL NOW',
                         style: TextStyle(
@@ -315,10 +337,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
                     decoration: BoxDecoration(
                       color: Colors.blue.shade50,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Colors.blue.shade200,
-                        width: 1,
-                      ),
+                      border: Border.all(color: Colors.blue.shade200, width: 1),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -357,7 +376,8 @@ class _UpdateDialogState extends State<UpdateDialog> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              widget.versionCheck.latestVersion?.fullVersion ?? '',
+                              widget.versionCheck.latestVersion?.fullVersion ??
+                                  '',
                               style: const TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
@@ -372,10 +392,14 @@ class _UpdateDialogState extends State<UpdateDialog> {
                 ],
 
                 // File Size Info
-                if (!_downloadComplete && widget.versionCheck.buildInfo?.fileSize != null) ...[
+                if (!_downloadComplete &&
+                    widget.versionCheck.buildInfo?.fileSize != null) ...[
                   const SizedBox(height: 12),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.grey.shade100,
                       borderRadius: BorderRadius.circular(8),
@@ -402,7 +426,9 @@ class _UpdateDialogState extends State<UpdateDialog> {
                 ],
 
                 // What's New
-                if (!_downloadComplete && (widget.versionCheck.latestVersion?.features.isNotEmpty ?? false)) ...[
+                if (!_downloadComplete &&
+                    (widget.versionCheck.latestVersion?.features.isNotEmpty ??
+                        false)) ...[
                   const SizedBox(height: 20),
                   Align(
                     alignment: Alignment.centerLeft,
@@ -420,7 +446,8 @@ class _UpdateDialogState extends State<UpdateDialog> {
                     constraints: const BoxConstraints(maxHeight: 120),
                     child: ListView.builder(
                       shrinkWrap: true,
-                      itemCount: widget.versionCheck.latestVersion!.features.length,
+                      itemCount:
+                          widget.versionCheck.latestVersion!.features.length,
                       itemBuilder: (context, index) {
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 6),
@@ -435,7 +462,10 @@ class _UpdateDialogState extends State<UpdateDialog> {
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
-                                  widget.versionCheck.latestVersion!.features[index],
+                                  widget
+                                      .versionCheck
+                                      .latestVersion!
+                                      .features[index],
                                   style: TextStyle(
                                     fontSize: 13,
                                     color: Colors.grey.shade700,
@@ -451,7 +481,8 @@ class _UpdateDialogState extends State<UpdateDialog> {
                 ],
 
                 // Download Progress
-                if (_isDownloading || (_downloadProgress > 0 && !_downloadComplete)) ...[
+                if (_isDownloading ||
+                    (_downloadProgress > 0 && !_downloadComplete)) ...[
                   const SizedBox(height: 20),
                   Column(
                     children: [
@@ -516,7 +547,9 @@ class _UpdateDialogState extends State<UpdateDialog> {
                         child: ElevatedButton(
                           onPressed: _isDownloading
                               ? null
-                              : () => _downloadAndInstallUpdate(widget.versionCheck.updateUrl),
+                              : () => _downloadAndInstallUpdate(
+                                  widget.versionCheck.updateUrl,
+                                ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: widget.versionCheck.forceUpdate
                                 ? Colors.red.shade600
@@ -530,7 +563,8 @@ class _UpdateDialogState extends State<UpdateDialog> {
                           child: Text(
                             _isDownloading
                                 ? 'Downloading...'
-                                : (_downloadProgress > 0 && _downloadProgress < 1.0)
+                                : (_downloadProgress > 0 &&
+                                      _downloadProgress < 1.0)
                                 ? 'Resume'
                                 : 'Update Now',
                             style: const TextStyle(
@@ -545,7 +579,9 @@ class _UpdateDialogState extends State<UpdateDialog> {
                   ),
                 ],
 
-                if (widget.versionCheck.forceUpdate && !_downloadComplete) ...[
+                if (widget.versionCheck.forceUpdate &&
+                    !_downloadComplete &&
+                    _errorMessage == null) ...[
                   const SizedBox(height: 12),
                   Text(
                     widget.versionCheck.message ??
@@ -559,6 +595,39 @@ class _UpdateDialogState extends State<UpdateDialog> {
                     ),
                   ),
                 ],
+
+                // Inline Error Message
+                if (_errorMessage != null) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.red.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.error_outline_rounded,
+                          color: Colors.red.shade700,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            _errorMessage!,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.red.shade900,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -569,24 +638,30 @@ class _UpdateDialogState extends State<UpdateDialog> {
 
   Future<void> _autoInstall() async {
     if (_downloadFilePath == null) {
-       // Re-check path if it's null
-       final directory = await getExternalStorageDirectory();
-       final downloadsPath = directory?.path ?? '/storage/emulated/0/Download';
-       _downloadFilePath = '$downloadsPath/mepco_esafety_update.apk';
+      // Re-check path if it's null
+      final directory = await getExternalStorageDirectory();
+      final downloadsPath = directory?.path ?? '/storage/emulated/0/Download';
+      _downloadFilePath = '$downloadsPath/mepco_esafety_update.apk';
     }
 
     if (!_hasPermission) {
-       await _checkAndRequestPermission();
-       if (!_hasPermission) {
-          Get.snackbar('Permission Required', 'Please allow installation of unknown apps.');
-          return;
-       }
+      await _checkAndRequestPermission();
+      if (!_hasPermission) {
+        Get.snackbar(
+          'Permission Required',
+          'Please allow installation of unknown apps.',
+        );
+        return;
+      }
     }
 
     try {
       final file = File(_downloadFilePath!);
       if (!await file.exists()) {
-        Get.snackbar('Error', 'Installation file not found. Please download again.');
+        Get.snackbar(
+          'Error',
+          'Installation file not found. Please download again.',
+        );
         setState(() {
           _downloadComplete = false;
           _downloadProgress = 0.0;
@@ -595,7 +670,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
       }
 
       print('Installing APK from: $_downloadFilePath');
-      
+
       final result = await OpenFilex.open(
         _downloadFilePath!,
         type: 'application/vnd.android.package-archive',
@@ -604,7 +679,6 @@ class _UpdateDialogState extends State<UpdateDialog> {
       if (result.type != ResultType.done) {
         Get.snackbar('Error', 'Could not open installer: ${result.message}');
       }
-
     } catch (e) {
       print('Auto-install error: $e');
       Get.snackbar('Error', 'An error occurred while opening the installer.');
@@ -613,9 +687,11 @@ class _UpdateDialogState extends State<UpdateDialog> {
 
   Future<void> _downloadAndInstallUpdate(String? url) async {
     if (url == null || url.isEmpty) {
-      Get.snackbar('Error', 'Update URL not available');
+      setState(() => _errorMessage = 'Update URL not available');
       return;
     }
+
+    setState(() => _errorMessage = null);
 
     if (!_hasPermission) {
       final result = await Permission.requestInstallPackages.request();
@@ -623,7 +699,9 @@ class _UpdateDialogState extends State<UpdateDialog> {
         _hasPermission = result.isGranted;
       });
       if (!result.isGranted) {
-        Get.snackbar('Permission Required', 'Enable "Install unknown apps" to update.');
+        setState(
+          () => _errorMessage = 'Enable "Install unknown apps" to update.',
+        );
         return;
       }
     }
@@ -641,8 +719,10 @@ class _UpdateDialogState extends State<UpdateDialog> {
         if (androidInfo.version.sdkInt <= 29) {
           final status = await Permission.storage.request();
           if (!status.isGranted) {
-            Get.snackbar('Permission Required', 'Storage permission is required');
-            setState(() => _isDownloading = false);
+            setState(() {
+              _isDownloading = false;
+              _errorMessage = 'Storage permission is required';
+            });
             return;
           }
         }
@@ -653,8 +733,8 @@ class _UpdateDialogState extends State<UpdateDialog> {
       final filePath = '$downloadsPath/mepco_esafety_update.apk';
       _downloadFilePath = filePath;
 
-      final totalSize = _parseSizeFromAPI(widget.versionCheck.buildInfo?.fileSize);
-      final totalSizeFormatted = widget.versionCheck.buildInfo?.fileSize ?? 'Unknown';
+      final totalSizeFormatted =
+          widget.versionCheck.buildInfo?.fileSize ?? 'Unknown';
 
       final file = File(filePath);
       var existingBytes = 0;
@@ -662,32 +742,52 @@ class _UpdateDialogState extends State<UpdateDialog> {
       if (await file.exists()) {
         existingBytes = await file.length();
       }
-      
+
+      // If file is already complete, just install
+      if (_totalSize > 0 && existingBytes >= _totalSize) {
+        setState(() {
+          _downloadProgress = 1.0;
+          _isDownloading = false;
+          _downloadComplete = true;
+        });
+        await _autoInstall();
+        return;
+      }
+
       if (existingBytes == 0) await _incrementDownloadCount(url);
-      
-      final client = http.Client();
+
+      _httpClient?.close();
+      _httpClient = http.Client();
       final headers = <String, String>{};
 
-      if (existingBytes > 0 && totalSize > 0 && existingBytes < totalSize) {
-        headers['Range'] = 'bytes=$existingBytes-';
+      if (existingBytes > 0 && _totalSize > 0 && existingBytes < _totalSize) {
+        // Many servers prefer 'bytes=start-end' format
+        headers['Range'] = 'bytes=$existingBytes-${_totalSize - 1}';
       }
 
       final request = http.Request('GET', Uri.parse(url));
       request.headers.addAll(headers);
-      final response = await client.send(request);
+      debugPrint('🚀 Sending Download Request: ${request.url}');
+      debugPrint('🚀 Request Headers: ${request.headers}');
+
+      final response = await _httpClient!.send(request);
+
+      debugPrint('📡 Response Status Code: ${response.statusCode}');
+      debugPrint('📡 Response Headers: ${response.headers}');
 
       if (response.statusCode != 200 && response.statusCode != 206) {
         throw Exception('Failed to download: ${response.statusCode}');
       }
 
-      var contentLength = totalSize > 0 ? totalSize : (response.contentLength ?? 0);
       var downloadedBytes = existingBytes;
 
+      // FileMode.append if we got 206 Partial Content
       final fileMode = (existingBytes > 0 && response.statusCode == 206)
           ? FileMode.append
           : FileMode.write;
 
       if (existingBytes > 0 && response.statusCode == 200) {
+        // Server doesn't support Range or sending full file, restart
         await file.delete();
         downloadedBytes = 0;
       }
@@ -699,10 +799,19 @@ class _UpdateDialogState extends State<UpdateDialog> {
           fileSink.add(chunk);
           downloadedBytes += chunk.length;
 
-          if (contentLength > 0) {
+          if (_totalSize > 0) {
             setState(() {
-              _downloadProgress = downloadedBytes / contentLength;
-              _downloadStatus = '${_formatBytes(downloadedBytes)} / $totalSizeFormatted';
+              _downloadProgress = downloadedBytes / _totalSize;
+              _downloadStatus =
+                  '${_formatBytes(downloadedBytes)} / $totalSizeFormatted';
+            });
+          } else if (response.contentLength != null) {
+            // Fallback if total size wasn't known from API but is in response
+            final total = response.contentLength! + existingBytes;
+            setState(() {
+              _downloadProgress = downloadedBytes / total;
+              _downloadStatus =
+                  '${_formatBytes(downloadedBytes)} / ${_formatBytes(total)}';
             });
           }
         }
@@ -715,18 +824,20 @@ class _UpdateDialogState extends State<UpdateDialog> {
         _downloadProgress = 1.0;
         _isDownloading = false;
         _downloadComplete = true;
+        _errorMessage = null;
       });
 
       await Future.delayed(const Duration(milliseconds: 500));
       await _autoInstall();
-
     } catch (e) {
       print('Download error: $e');
       setState(() {
         _isDownloading = false;
-        _downloadStatus = 'Download failed. Please try again.';
+        _downloadStatus = 'Download failed.';
+        _errorMessage =
+            'Download failed: ${e.toString().split(':').last.trim()}. Please check your connection.';
       });
-      Get.snackbar('Error', 'Download failed. Please check your connection.');
+      // NO Get.snackbar here to avoid "No Overlay" error
     }
   }
 
@@ -734,7 +845,9 @@ class _UpdateDialogState extends State<UpdateDialog> {
     try {
       final buildId = Uri.parse(url).pathSegments.last;
       final baseUrl = Uri.parse(url).origin;
-      await http.post(Uri.parse('$baseUrl/api/app/increment-download/$buildId'));
+      await http.post(
+        Uri.parse('$baseUrl/api/app/increment-download/$buildId'),
+      );
     } catch (e) {
       print('⚠️ Count error: $e');
     }

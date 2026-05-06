@@ -1,3 +1,4 @@
+
 import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -30,6 +31,8 @@ const AndroidNotificationChannel notificationChannel = AndroidNotificationChanne
   'High Importance Notifications',
   description: 'Used for important notifications.',
   importance: Importance.max,
+  playSound: true,
+  sound: RawResourceAndroidNotificationSound('mepco_notification_sound'),
 );
 
 /// ---------------------------------------------------------------------------
@@ -80,11 +83,11 @@ void handleNotificationClick(Map<String, dynamic> data) {
 // }
 Future<void> initializeLocalNotifications() async {
   const AndroidInitializationSettings androidSettings =
-      AndroidInitializationSettings('@mipmap/ic_launcher');
+  AndroidInitializationSettings('@mipmap/ic_launcher');
 
   // ← YE ADD KARO
   const DarwinInitializationSettings iosSettings =
-      DarwinInitializationSettings(
+  DarwinInitializationSettings(
     requestAlertPermission: true,
     requestBadgePermission: true,
     requestSoundPermission: true,
@@ -106,12 +109,13 @@ Future<void> initializeLocalNotifications() async {
   );
 
   final AndroidFlutterLocalNotificationsPlugin? androidPlugin =
-    flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+  flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
 
-await androidPlugin?.createNotificationChannel(notificationChannel);
+  await androidPlugin?.createNotificationChannel(notificationChannel);
 }
 
 Future<void> showLocalNotification(RemoteMessage message) async {
+  debugPrint('🔔 showLocalNotification called: ${message.notification?.title}');
   final notification = message.notification;
   if (notification == null) return;
 
@@ -122,15 +126,30 @@ Future<void> showLocalNotification(RemoteMessage message) async {
     icon: '@mipmap/ic_launcher',
     importance: Importance.max,
     priority: Priority.high,
+    playSound: true,
+    sound: const RawResourceAndroidNotificationSound('mepco_notification_sound'),
   );
 
-  await flutterLocalNotificationsPlugin.show(
-    DateTime.now().millisecondsSinceEpoch ~/ 1000,
-    notification.title,
-    notification.body,
-    NotificationDetails(android: androidDetails),
-    payload: jsonEncode(message.data),
+  const darwinDetails = DarwinNotificationDetails(
+    presentSound: true,
+    sound: 'mepco_notification_sound.wav',
   );
+
+  try {
+    await flutterLocalNotificationsPlugin.show(
+      DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      notification.title,
+      notification.body,
+      NotificationDetails(
+        android: androidDetails,
+        iOS: darwinDetails,
+      ),
+      payload: jsonEncode(message.data),
+    );
+    debugPrint('✅ Notification shown successfully');
+  } catch (e) {
+    debugPrint('❌ Error showing notification: $e');
+  }
 }
 
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -154,7 +173,7 @@ Future<void> main() async {
   FlutterError.onError = (details) {
     // Suppress NetworkImageLoadException, 404 errors, and Tile loading issues
     final errorStr = details.exception.toString();
-    if (errorStr.contains('NetworkImageLoadException') || 
+    if (errorStr.contains('NetworkImageLoadException') ||
         errorStr.contains('statusCode: 404') ||
         errorStr.contains('Image resource service') ||
         errorStr.contains('ClientException') ||
@@ -162,7 +181,7 @@ Future<void> main() async {
       debugPrint('Ignored image/tile load error in global handler: $errorStr');
       return;
     }
-    
+
     FlutterError.presentError(details);
     SnackbarHelper.showError(
       title: 'App Error',
@@ -173,14 +192,14 @@ Future<void> main() async {
   // Global Platform Error Catcher (Async errors)
   PlatformDispatcher.instance.onError = (error, stack) {
     final errorStr = error.toString();
-  if (errorStr.contains('NetworkImageLoadException') ||
-      errorStr.contains('statusCode: 404') ||
-      errorStr.contains('ClientException') ||
-      errorStr.contains('tile.openstreetmap.org') ||
-      errorStr.contains('apns-token-not-set')) { // ← YE ADD KARO
-    debugPrint('Ignored error: $errorStr');
-    return true;
-  }
+    if (errorStr.contains('NetworkImageLoadException') ||
+        errorStr.contains('statusCode: 404') ||
+        errorStr.contains('ClientException') ||
+        errorStr.contains('tile.openstreetmap.org') ||
+        errorStr.contains('apns-token-not-set')) { // ← YE ADD KARO
+      debugPrint('Ignored error: $errorStr');
+      return true;
+    }
 
     SnackbarHelper.showError(
       title: 'Unexpected Error',
@@ -207,12 +226,12 @@ Future<void> main() async {
 
   FirebaseMessaging messaging = FirebaseMessaging.instance;
   await messaging.requestPermission(alert: true, badge: true, sound: true);
-try {
-  String? token = await messaging.getToken();
-  debugPrint('FCM Token: $token');
-} catch (e) {
-  debugPrint('FCM Token error (ignored on iOS Ad Hoc): $e');
-}
+  try {
+    String? token = await messaging.getToken();
+    debugPrint('FCM Token: $token');
+  } catch (e) {
+    debugPrint('FCM Token error (ignored on iOS Ad Hoc): $e');
+  }
   FirebaseMessaging.onBackgroundMessage(
     firebaseMessagingBackgroundHandler,
   );

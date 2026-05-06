@@ -8,18 +8,21 @@ import '../widgets/error_feedback_dialog.dart';
 
 class SnackbarHelper {
   /// Shows a success popup dialog in the center of the screen.
-  static void showSuccess({
-    required String title,
-    required String message,
-  }) {
+  static void showSuccess({required String title, required String message}) {
+    if (Get.context == null) {
+      debugPrint(
+        '⚠️ SnackbarHelper.showSuccess: Get.context is null, skipping dialog',
+      );
+      return;
+    }
+
     SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (Get.context == null) return;
+
       final displayMessage = _applyTranslation(message) ?? message;
 
       Get.dialog(
-        _SuccessDialog(
-          title: title,
-          message: displayMessage,
-        ),
+        _SuccessDialog(title: title, message: displayMessage),
         barrierDismissible: true,
         barrierColor: Colors.black.withOpacity(0.5),
       );
@@ -27,16 +30,19 @@ class SnackbarHelper {
   }
 
   /// Shows a warning popup dialog in the center of the screen.
-  static void showWarning({
-    required String title,
-    required String message,
-  }) {
+  static void showWarning({required String title, required String message}) {
+    if (Get.context == null) {
+      debugPrint(
+        '⚠️ SnackbarHelper.showWarning: Get.context is null, skipping dialog',
+      );
+      return;
+    }
+
     SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (Get.context == null) return;
+
       Get.dialog(
-        _WarningDialog(
-          title: title,
-          message: message,
-        ),
+        _WarningDialog(title: title, message: message),
         barrierDismissible: true,
         barrierColor: Colors.black.withOpacity(0.5),
       );
@@ -51,22 +57,32 @@ class SnackbarHelper {
   }) {
     debugPrint('🔴 SnackbarHelper.showError CALLED: $title -> $message');
 
+    if (Get.context == null) {
+      debugPrint(
+        '⚠️ SnackbarHelper.showError: Get.context is null, skipping dialog',
+      );
+      return;
+    }
+
     // Handle Network/Internet Connection Errors specifically
-    if (message.contains('SocketException') || 
-        message.contains('Failed host lookup') || 
+    if (message.contains('SocketException') ||
+        message.contains('Failed host lookup') ||
         message.contains('HandshakeException') ||
         message.contains('Connection timed out') ||
         message.contains('ClientException')) {
-      
-      final connectionErrorMessage = 'Internet connection issue. Please check your network.\nانٹرنیٹ کنکشن میں مسئلہ ہے۔ براہِ کرم اپنا نیٹ ورک چیک کریں۔';
-      
+      final connectionErrorMessage =
+          'Internet connection issue. Please check your network.\nانٹرنیٹ کنکشن میں مسئلہ ہے۔ براہِ کرم اپنا نیٹ ورک چیک کریں۔';
+
       SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (Get.context == null) return;
+
         Get.dialog(
           _ErrorDialog(
             title: 'Connection Error',
             message: connectionErrorMessage,
             backendError: message,
-            showFeedback: false, // Don't show feedback for simple internet issues
+            showFeedback:
+                false, // Don't show feedback for simple internet issues
           ),
           barrierDismissible: true,
           barrierColor: Colors.black.withOpacity(0.5),
@@ -76,8 +92,11 @@ class SnackbarHelper {
     }
 
     // Suppress "not found" error, which is handled by forcing a logout.
-    if (message.contains('Authentication Token not found.') && !message.contains('host lookup')) {
-      debugPrint('🙈 "Not found" (credentials) error suppressed from UI. Logout is expected.');
+    if (message.contains('Authentication Token not found.') &&
+        !message.contains('host lookup')) {
+      debugPrint(
+        '🙈 "Not found" (credentials) error suppressed from UI. Logout is expected.',
+      );
       return;
     }
 
@@ -94,6 +113,8 @@ class SnackbarHelper {
     final displayMessage = _translateError(message);
 
     SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (Get.context == null) return;
+
       Get.dialog(
         _ErrorDialog(
           title: title,
@@ -110,75 +131,79 @@ class SnackbarHelper {
   static String? _applyTranslation(String message) {
     const translations = {
       'Connection failed':
-      'Internet connection issue. Please check your network.\nانٹرنیٹ کنکشن میں مسئلہ ہے۔ براہِ کرم اپنا نیٹ ورک چیک کریں۔',
+          'Internet connection issue. Please check your network.\nانٹرنیٹ کنکشن میں مسئلہ ہے۔ براہِ کرم اپنا نیٹ ورک چیک کریں۔',
       'Invalid credentials':
-      'The username or password you entered is incorrect.\nجو صارف نام یا پاس ورڈ آپ نے درج کیا ہے وہ غلط ہے۔',
+          'The username or password you entered is incorrect.\nجو صارف نام یا پاس ورڈ آپ نے درج کیا ہے وہ غلط ہے۔',
       'Token expired':
-      'Your session has expired. Please log in again.\nآپ کا سیشن ختم ہو گیا ہے۔ براہ کرم دوبارہ لاگ ان کریں۔',
+          'Your session has expired. Please log in again.\nآپ کا سیشن ختم ہو گیا ہے۔ براہ کرم دوبارہ لاگ ان کریں۔',
       //'not found': 'Credentials not found. You are logged out. Please log in\nکریڈینشلز نہیں ملے۔ آپ لاگ آؤٹ ہو چکے ہیں، براہِ کرم لاگ اِن کریں۔',
       'Failed to load PTW Context':
-      'PTW context not loaded due to cancellation or network issue\nپی ٹی ڈبلیو کانٹیکسٹ کینسل یا نیٹ ورک مسئلے کی وجہ سے لوڈ نہیں ہوا۔',
+          'PTW context not loaded due to cancellation or network issue\nپی ٹی ڈبلیو کانٹیکسٹ کینسل یا نیٹ ورک مسئلے کی وجہ سے لوڈ نہیں ہوا۔',
       'Authentication token not found.':
-      'Authentication token not found.\nتوثیقی ٹوکن نہیں ملا۔',
+          'Authentication token not found.\nتوثیقی ٹوکن نہیں ملا۔',
       'PTW action completed successfully!':
-      'PTW action completed successfully!\nپی ٹی ڈبلیو کا عمل کامیابی سے مکمل ہو گیا ہے۔',
+          'PTW action completed successfully!\nپی ٹی ڈبلیو کا عمل کامیابی سے مکمل ہو گیا ہے۔',
       'The password field must be at least 8 characters.':
-      'The password field must be at least 8 characters.\nپاس ورڈ کم از کم 8 حروف پر مشتمل ہونا چاہیے۔',
+          'The password field must be at least 8 characters.\nپاس ورڈ کم از کم 8 حروف پر مشتمل ہونا چاہیے۔',
       'PTW created successfully.':
-      'PTW created successfully.\nکامیابی کے ساتھ تخلیق کر دیا گیا۔',
+          'PTW created successfully.\nکامیابی کے ساتھ تخلیق کر دیا گیا۔',
       'Checklist submitted successfully':
-      'Checklist submitted successfully\nچیک لسٹ کامیابی کے ساتھ جمع کر دی گئی۔',
+          'Checklist submitted successfully\nچیک لسٹ کامیابی کے ساتھ جمع کر دی گئی۔',
       'PTW marked as ISSUED!':
-      'PTW marked as ISSUED!\nپی ٹی ڈبلیو جاری شدہ کے طور پر نشان زد کیا گیا۔',
+          'PTW marked as ISSUED!\nپی ٹی ڈبلیو جاری شدہ کے طور پر نشان زد کیا گیا۔',
       'Please confirm the information is correct.':
-      'Check the box to confirm.\nتصدیق کرنے کے لیے باکس کو چیک کریں۔',
+          'Check the box to confirm.\nتصدیق کرنے کے لیے باکس کو چیک کریں۔',
       'PTW execution started successfully.':
-      'Check the box to confirm.\nپی ٹی ڈبلیو کا عمل کامیابی سے شروع ہو گیا۔ ',
+          'Check the box to confirm.\nپی ٹی ڈبلیو کا عمل کامیابی سے شروع ہو گیا۔ ',
       'PTW completion submitted successfully.':
-      'PTW completion submitted successfully.\nپی ٹی ڈبلیو کی تکمیل کامیابی سے جمع کر دی گئی۔ ',
+          'PTW completion submitted successfully.\nپی ٹی ڈبلیو کی تکمیل کامیابی سے جمع کر دی گئی۔ ',
       'Please confirm that the feeder information is accurate by checking the consent checkbox.':
-      'Please confirm that the feeder information is accurate by checking the consent checkbox.\nبراہ کرم رضامندی کے چیک باکس کو چیک کر کے یہ تصدیق کریں کہ فیڈر کی معلومات درست ہیں۔ ',
-      'PTW Closed successfully!' :
-      'PTW Closed successfully!\n پی ٹی ڈبلیو کامیابی کے ساتھ بند ہو گیا',
-      'OTP sent successfully to your email.' :
-      'OTP sent successfully to your email.\n آپ کے ای میل پر او ٹی پی کامیابی سے بھیج دیا گیا ہے۔',
-      'Identity verified successfully.' :
-      'Identity verified successfully.\nشناخت کامیابی کے ساتھ تصدیق ہو گئی۔',
-      'Password reset successfully' :
-      'Password reset successfully.\nپاس ورڈ کامیابی کے ساتھ ری سیٹ ہو گیا۔',
-      'Failed to send OTP. Please check the email and try again.' :
-      'Failed to send OTP. Please check the email and try again.\nاو ٹی پی بھیجنے میں ناکامی ہوئی ہے۔ براہِ کرم ای میل چیک کریں اور دوبارہ کوشش کریں۔',
+          'Please confirm that the feeder information is accurate by checking the consent checkbox.\nبراہ کرم رضامندی کے چیک باکس کو چیک کر کے یہ تصدیق کریں کہ فیڈر کی معلومات درست ہیں۔ ',
+      'PTW Closed successfully!':
+          'PTW Closed successfully!\n پی ٹی ڈبلیو کامیابی کے ساتھ بند ہو گیا',
+      'OTP sent successfully to your email.':
+          'OTP sent successfully to your email.\n آپ کے ای میل پر او ٹی پی کامیابی سے بھیج دیا گیا ہے۔',
+      'Identity verified successfully.':
+          'Identity verified successfully.\nشناخت کامیابی کے ساتھ تصدیق ہو گئی۔',
+      'Password reset successfully':
+          'Password reset successfully.\nپاس ورڈ کامیابی کے ساتھ ری سیٹ ہو گیا۔',
+      'Failed to send OTP. Please check the email and try again.':
+          'Failed to send OTP. Please check the email and try again.\nاو ٹی پی بھیجنے میں ناکامی ہوئی ہے۔ براہِ کرم ای میل چیک کریں اور دوبارہ کوشش کریں۔',
       'Another user is already logged in on this grid':
-      'Another user is already logged in on this grid.\n اس گرڈ پر پہلے ہی ایک اور صارف لاگ ان ہے',
+          'Another user is already logged in on this grid.\n اس گرڈ پر پہلے ہی ایک اور صارف لاگ ان ہے',
       'Another PDC user is already logged in':
-      'Another PDC user role is already logged in\nپی ڈی سی کے ایک اور صارف کا کردار پہلے ہی لاگ اِن ہو چکا ہے۔',
+          'Another PDC user role is already logged in\nپی ڈی سی کے ایک اور صارف کا کردار پہلے ہی لاگ اِن ہو چکا ہے۔',
       'No PDC currently active':
-      'No PDC currently active\nفی الحال کوئی پی ڈی سی دستیاب نہیں ہے۔',
+          'No PDC currently active\nفی الحال کوئی پی ڈی سی دستیاب نہیں ہے۔',
       'Cannot logout: You have active PTWs and no other PDC is online to handle them':
-      'لاگ آؤٹ نہیں ہو سکتے: آپ کے پاس فعال PTWs ہیں اور کوئی دوسرا PDC آن لائن نہیں ہے',
+          'لاگ آؤٹ نہیں ہو سکتے: آپ کے پاس فعال PTWs ہیں اور کوئی دوسرا PDC آن لائن نہیں ہے',
       'You have active PTWs. Please delegate them to another PDC before logging out.':
-      'You have active PTWs. Please delegate them to another PDC before logging out.\nآپ کے پاس فعال پی ٹی ڈبلیوز ہیں۔ براہ کرم لاگ آؤٹ کرنے سے پہلے انہیں کسی دوسرے پی ڈی سی کو سونپ دیں۔',
+          'You have active PTWs. Please delegate them to another PDC before logging out.\nآپ کے پاس فعال پی ٹی ڈبلیوز ہیں۔ براہ کرم لاگ آؤٹ کرنے سے پہلے انہیں کسی دوسرے پی ڈی سی کو سونپ دیں۔',
       'Location services are disabled.':
-      'Location services are disabled.\n مقام کی خدمات غیر فعال ہیں۔',
-      'Grid posting not Found':
-      'Grid posting not Found.\nگرڈ پوسٹنگ نہیں ملی۔',
-    'SDO Not Found. Please contact admin.':
-        'SDO Not Found. Please contact admin.\nگرڈ پوسٹنگ نہیں ملی۔'
+          'Location services are disabled.\n مقام کی خدمات غیر فعال ہیں۔',
+      'Grid posting not Found': 'Grid posting not Found.\nگرڈ پوسٹنگ نہیں ملی۔',
+      'SDO Not Found. Please contact admin.':
+          'SDO Not Found. Please contact admin.\nگرڈ پوسٹنگ نہیں ملی۔',
     };
     for (var entry in translations.entries) {
       if (message == entry.key) {
         return entry.value;
       }
     }
-    if (message.startsWith('Already logged in on') && message.contains('Please logout first')) {
-      final match = RegExp(r'Already logged in on (.+)\. Please logout first\.').firstMatch(message);
+    if (message.startsWith('Already logged in on') &&
+        message.contains('Please logout first')) {
+      final match = RegExp(
+        r'Already logged in on (.+)\. Please logout first\.',
+      ).firstMatch(message);
       if (match != null) {
         final deviceInfo = match.group(1);
         return 'Already logged in on $deviceInfo. Please logout first.\n$deviceInfo پر پہلے سے لاگ ان ہے۔ پہلے لاگ آؤٹ کریں۔';
       }
     }
     if (message.contains('is already logged in on this grid')) {
-      final match = RegExp(r'(.+) is already logged in on this grid\.').firstMatch(message);
+      final match = RegExp(
+        r'(.+) is already logged in on this grid\.',
+      ).firstMatch(message);
       if (match != null) {
         final userName = match.group(1);
         return '$userName is already logged in on this grid.\n$userName اس گرڈ پر پہلے سے لاگ ان ہے۔';
@@ -196,8 +221,9 @@ class SnackbarHelper {
     const validationTranslations = {
       "The selected feeder id is invalid.": "منتخب فیڈر آئی ڈی غلط ہے۔",
       "The place of work field is required.": "کام کی جگہ کا فیلڈ درکار ہے۔",
-      "The scope of work field is required.": "کام کے دائرہ کار کا فیلڈ درکار ہے۔",
-      "The selected type is invalid." :"منتخب کردہ قسم غلط ہے۔",
+      "The scope of work field is required.":
+          "کام کے دائرہ کار کا فیلڈ درکار ہے۔",
+      "The selected type is invalid.": "منتخب کردہ قسم غلط ہے۔",
     };
 
     try {
@@ -210,13 +236,13 @@ class SnackbarHelper {
           final allErrorMessages = errors.values
               .expand((e) => e as List)
               .map((e) {
-            final englishError = e.toString();
-            final urduTranslation = validationTranslations[englishError];
-            if (urduTranslation != null) {
-              return '- $englishError\n  $urduTranslation';
-            }
-            return '- $englishError';
-          })
+                final englishError = e.toString();
+                final urduTranslation = validationTranslations[englishError];
+                if (urduTranslation != null) {
+                  return '- $englishError\n  $urduTranslation';
+                }
+                return '- $englishError';
+              })
               .join('\n');
           if (allErrorMessages.isNotEmpty) {
             return allErrorMessages;
@@ -232,7 +258,9 @@ class SnackbarHelper {
       return simpleTranslation;
     }
 
-    debugPrint('Unknown error, showing original backend message: $backendMessage');
+    debugPrint(
+      'Unknown error, showing original backend message: $backendMessage',
+    );
     return backendMessage;
   }
 }
@@ -242,16 +270,14 @@ class _SuccessDialog extends StatefulWidget {
   final String title;
   final String message;
 
-  const _SuccessDialog({
-    required this.title,
-    required this.message,
-  });
+  const _SuccessDialog({required this.title, required this.message});
 
   @override
   State<_SuccessDialog> createState() => _SuccessDialogState();
 }
 
-class _SuccessDialogState extends State<_SuccessDialog> with SingleTickerProviderStateMixin {
+class _SuccessDialogState extends State<_SuccessDialog>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
   late Animation<double> _fadeAnimation;
@@ -269,10 +295,7 @@ class _SuccessDialogState extends State<_SuccessDialog> with SingleTickerProvide
       curve: Curves.elasticOut,
     );
 
-    _fadeAnimation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeIn,
-    );
+    _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
 
     _controller.forward();
 
@@ -392,16 +415,14 @@ class _WarningDialog extends StatefulWidget {
   final String title;
   final String message;
 
-  const _WarningDialog({
-    required this.title,
-    required this.message,
-  });
+  const _WarningDialog({required this.title, required this.message});
 
   @override
   State<_WarningDialog> createState() => _WarningDialogState();
 }
 
-class _WarningDialogState extends State<_WarningDialog> with SingleTickerProviderStateMixin {
+class _WarningDialogState extends State<_WarningDialog>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
   late Animation<double> _fadeAnimation;
@@ -419,10 +440,7 @@ class _WarningDialogState extends State<_WarningDialog> with SingleTickerProvide
       curve: Curves.elasticOut,
     );
 
-    _fadeAnimation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeIn,
-    );
+    _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
 
     _controller.forward();
 
@@ -555,7 +573,8 @@ class _ErrorDialog extends StatefulWidget {
   State<_ErrorDialog> createState() => _ErrorDialogState();
 }
 
-class _ErrorDialogState extends State<_ErrorDialog> with SingleTickerProviderStateMixin {
+class _ErrorDialogState extends State<_ErrorDialog>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
   late Animation<double> _fadeAnimation;
@@ -573,10 +592,7 @@ class _ErrorDialogState extends State<_ErrorDialog> with SingleTickerProviderSta
       curve: Curves.elasticOut,
     );
 
-    _fadeAnimation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeIn,
-    );
+    _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
 
     _controller.forward();
   }
@@ -672,7 +688,10 @@ class _ErrorDialogState extends State<_ErrorDialog> with SingleTickerProviderSta
                           },
                           style: OutlinedButton.styleFrom(
                             foregroundColor: const Color(0xFFEA580C),
-                            side: const BorderSide(color: Color(0xFFEA580C), width: 1.5),
+                            side: const BorderSide(
+                              color: Color(0xFFEA580C),
+                              width: 1.5,
+                            ),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
